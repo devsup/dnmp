@@ -31,10 +31,8 @@ services:
       - ${DATA_DIR}/redis:/data/:rw
     restart: always
     entrypoint: [
-      "redis-server",
-      "/etc/redis.conf",
-      "--requirepass",
-      "${REDIS_PASSWORD}"
+      "redis-server", "/etc/redis.conf",
+      "--requirepass", "${REDIS_PASSWORD}"
     ]
     environment:
       TZ: ${TZ}
@@ -52,7 +50,6 @@ services:
       - ${MYSQL5_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
       - ${DATA_DIR}/mysql5:/var/lib/mysql/:rw
       - ${MYSQL5_LOG_DIR}:/var/log/mysql/:rw
-
     networks:
       - default
     environment:
@@ -110,6 +107,8 @@ services:
       - 9500-9599 # 暴露容器内部端口段（可选，用于文档说明）
     ports:
       - "9500-9599:9500-9599" # 端口段映射
+    environment:
+      PHP_IDE_CONFIG: "serverName=xdebug" # 用于xdebug调试参数
     volumes:
       - ${SOURCE_DIR}:/www/:rw
       - ${PHP82_PHP_CONF_FILE}:/usr/local/etc/php/php.ini
