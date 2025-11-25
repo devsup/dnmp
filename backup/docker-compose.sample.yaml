@@ -18,8 +18,11 @@ services:
       - ${NGINX_FASTCGI_PARAMS}:/etc/nginx/fastcgi_params
       - ${NGINX_LOG_DIR}:/var/log/nginx
     restart: always
+    depends_on:
+      - php82
     networks:
-      - default
+      dnmp_network:
+        ipv4_address: 172.19.0.10
 
   redis:
     image: redis:${REDIS_VERSION}
@@ -37,10 +40,11 @@ services:
     environment:
       TZ: ${TZ}
     networks:
-      - default
+      dnmp_network:
+        ipv4_address: 172.19.0.40
 
   mysql5:
-    # 指定使用 amd64 平台,mac芯片m1-m4需要打开
+    # 指定使用 amd64 平台, mac芯片m1-m4建议保留
     platform: linux/amd64
     container_name: mysql5
     image: mysql:${MYSQL5_VERSION}
@@ -50,12 +54,14 @@ services:
       - ${MYSQL5_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
       - ${DATA_DIR}/mysql5:/var/lib/mysql/:rw
       - ${MYSQL5_LOG_DIR}:/var/log/mysql/:rw
-    networks:
-      - default
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL5_ROOT_PASSWORD}
       MYSQL_ROOT_HOST: ${MYSQL5_ROOT_HOST}
       TZ: ${TZ}
+    restart: always
+    networks:
+      dnmp_network:
+        ipv4_address: 172.19.0.30
 
   mysql8:
     image: mysql:${MYSQL8_VERSION}
@@ -66,13 +72,14 @@ services:
       - ${MYSQL8_CONF_FILE}:/etc/mysql8/conf.d/mysql.cnf:ro
       - ${DATA_DIR}/mysql8:/var/lib/mysql/:rw
       - ${MYSQL8_LOG_DIR}:/var/log/mysql/:rw
-    restart: always
-    networks:
-      - default
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL8_ROOT_PASSWORD}
       MYSQL_ROOT_HOST: ${MYSQL8_ROOT_HOST}
       TZ: ${TZ}
+    restart: always
+    networks:
+      dnmp_network:
+        ipv4_address: 172.19.0.31
 
   rabbitmq:
     container_name: rabbitmq
@@ -92,7 +99,8 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
       TZ: ${TZ}
     networks:
-      - default
+      dnmp_network:
+        ipv4_address: 172.19.0.50
 
   php82:
     container_name: php82
@@ -103,12 +111,11 @@ services:
         PHP_EXTENSIONS: ${PHP82_EXTENSIONS}
         DEBIAN_MIRROR_DOMAIN: deb.debian.org
         TZ: ${TZ}
-    expose:
-      - 9500-9599 # 暴露容器内部端口段（可选，用于文档说明）
     ports:
-      - "9500-9599:9500-9599" # 端口段映射
+      # 注意：大范围端口映射会影响 Docker 启动速度
+      - "${PHP82_HOST_PORT}"
     environment:
-      PHP_IDE_CONFIG: "serverName=xdebug" # 用于xdebug调试参数
+      PHP_IDE_CONFIG: "serverName=xdebug"
     volumes:
       - ${SOURCE_DIR}:/www/:rw
       - ${PHP82_PHP_CONF_FILE}:/usr/local/etc/php/php.ini
@@ -116,17 +123,21 @@ services:
       - ${PHP82_LOG_DIR}:/var/log/php
       - ${PHP82_DATA_COMPOSER}:/tmp/composer
     restart: always
-    privileged: true # 添加privileged模式 特权模式
+    privileged: true
     cap_add:
       - SYS_PTRACE
+    depends_on:
+      - mysql8
+      - redis
     networks:
-      - default
+      dnmp_network:
+        ipv4_address: 172.19.0.20
 
 networks:
-  default:
+  dnmp_network:
     driver: bridge
     ipam:
       driver: default
-      # 解除下面的注释可以设置网段，用于nginx等容器固定容器IP
-      #config:
-      #  - subnet: 10.0.0.0/24
+      config:
+        # 使用 172.19.x.x 避免与常见的 192.168 或 10.0 冲突
+        - subnet: 172.19.0.0/24
