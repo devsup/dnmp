@@ -41,24 +41,22 @@ services:
       TZ: ${TZ}
     networks:
       dnmp_network:
-        ipv4_address: 172.19.0.40
+        ipv4_address: 172.19.0.20
 
-  mysql5:
-    # 指定使用 amd64 平台, mac芯片m1-m4建议保留
-    platform: linux/amd64
-    container_name: mysql5
-    image: mysql:${MYSQL5_VERSION}
+  nodejs:
+    image: node:${NODE_VERSION}
+    container_name: nodejs
     ports:
-      - "${MYSQL5_HOST_PORT}:3306"
+      # 注意：大范围端口映射会影响 Docker 启动速度
+      - "${NODE_HOST_PORT}"
     volumes:
-      - ${MYSQL5_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
-      - ${DATA_DIR}/mysql5:/var/lib/mysql/:rw
-      - ${MYSQL5_LOG_DIR}:/var/log/mysql/:rw
+      - ${SOURCE_DIR}:/www/:rw
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL5_ROOT_PASSWORD}
-      MYSQL_ROOT_HOST: ${MYSQL5_ROOT_HOST}
+      NODE_ENV: ${NODE_ENV}
       TZ: ${TZ}
     restart: always
+    stdin_open: true
+    tty: true
     networks:
       dnmp_network:
         ipv4_address: 172.19.0.30
@@ -79,7 +77,27 @@ services:
     restart: always
     networks:
       dnmp_network:
-        ipv4_address: 172.19.0.31
+        ipv4_address: 172.19.0.40
+
+  mysql5:
+    # 指定使用 amd64 平台, mac芯片m1-m4建议保留
+    platform: linux/amd64
+    container_name: mysql5
+    image: mysql:${MYSQL5_VERSION}
+    ports:
+      - "${MYSQL5_HOST_PORT}:3306"
+    volumes:
+      - ${MYSQL5_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
+      - ${DATA_DIR}/mysql5:/var/lib/mysql/:rw
+      - ${MYSQL5_LOG_DIR}:/var/log/mysql/:rw
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL5_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: ${MYSQL5_ROOT_HOST}
+      TZ: ${TZ}
+    restart: always
+    networks:
+      dnmp_network:
+        ipv4_address: 172.19.0.41
 
   rabbitmq:
     container_name: rabbitmq
@@ -115,7 +133,7 @@ services:
       # 注意：大范围端口映射会影响 Docker 启动速度
       - "${PHP82_HOST_PORT}"
     environment:
-      PHP_IDE_CONFIG: "serverName=xdebug"
+      PHP_IDE_CONFIG: ${PHP_IDE_CONFIG}
     volumes:
       - ${SOURCE_DIR}:/www/:rw
       - ${PHP82_PHP_CONF_FILE}:/usr/local/etc/php/php.ini
@@ -131,7 +149,7 @@ services:
       - redis
     networks:
       dnmp_network:
-        ipv4_address: 172.19.0.20
+        ipv4_address: 172.19.0.60
 
 networks:
   dnmp_network:
