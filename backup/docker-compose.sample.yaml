@@ -54,6 +54,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       TZ: ${TZ}
+    entrypoint: ["sh", "-c", "npm install -g pnpm && tail -f /dev/null"]
     restart: always
     stdin_open: true
     tty: true
