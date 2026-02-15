@@ -44,8 +44,11 @@ services:
         ipv4_address: 172.19.0.20
 
   nodejs:
-    image: node:${NODE_VERSION}
     container_name: nodejs
+    build:
+      context: ./service/nodejs
+      args:
+        NODE_VERSION: ${NODE_VERSION}
     ports:
       # 注意：大范围端口映射会影响 Docker 启动速度
       - "${NODE_HOST_PORT}"
@@ -54,7 +57,6 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       TZ: ${TZ}
-    entrypoint: ["sh", "-c", "npm install -g pnpm && tail -f /dev/null"]
     restart: always
     stdin_open: true
     tty: true
